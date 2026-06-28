@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANCHOR — Sign In</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .login-wrap { width:100%; max-width:440px; position:relative; z-index:10; }
+    .login-logo { text-align:center; margin-bottom:36px; }
+    .logo-main { font-family:'Cinzel',serif; font-size:3.5rem; font-weight:700; letter-spacing:0.3em; background:linear-gradient(135deg,#64ffda,#a8f0e6,#7ecac3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:block; }
+    .logo-wave { display:block; margin:6px auto 0; width:80px; height:3px; background:linear-gradient(to right,transparent,var(--seafoam),transparent); border-radius:2px; }
+    .logo-tagline { font-size:0.72rem; color:var(--text-dim); letter-spacing:0.35em; text-transform:uppercase; margin-top:10px; display:block; }
+    .login-card { padding:36px; }
+    .tab-row { display:flex; border-bottom:1px solid var(--border); margin-bottom:28px; }
+    .tab-btn { flex:1; padding:10px; background:none; border:none; color:var(--text-dim); font-family:'Poppins',sans-serif; font-size:0.875rem; font-weight:500; cursor:pointer; transition:color 0.2s; position:relative; }
+    .tab-btn.active { color:var(--seafoam); }
+    .tab-btn.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--seafoam); border-radius:2px; }
+    .form-panel { display:none; flex-direction:column; gap:18px; }
+    .form-panel.active { display:flex; }
+    .lockout-banner { background:rgba(220,50,50,0.12); border:1px solid rgba(220,50,50,0.35); border-radius:10px; padding:14px 16px; color:#ff6b6b; font-size:0.85rem; text-align:center; display:none; }
+    .lockout-banner.show { display:block; }
+    .error-msg { color:var(--coral); font-size:0.82rem; text-align:center; min-height:20px; }
+    .success-msg { color:#50fa7b; font-size:0.82rem; text-align:center; min-height:20px; }
+    .setup-banner { background:rgba(100,255,218,0.05); border:1px solid rgba(100,255,218,0.2); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+    .setup-banner h3 { font-size:0.85rem; color:var(--seafoam); font-family:'Poppins',sans-serif; font-weight:600; margin-bottom:8px; }
+    .setup-banner ol { color:var(--text-dim); font-size:0.78rem; line-height:2; padding-left:18px; }
+    .setup-banner a { color:var(--seafoam); }
+    .pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem; padding:4px; }
+    .attempt-dots { display:flex; gap:5px; justify-content:center; margin-top:6px; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:background 0.3s; }
+    .dot.used { background:var(--coral); }
+    .footer-note { text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:20px; }
+    .deco { position:fixed; pointer-events:none; opacity:0.07; font-size:3rem; }
+    .deco-1 { top:8%; left:5%; transform:rotate(-15deg); }
+    .deco-2 { bottom:15%; right:6%; transform:rotate(20deg); }
+    .deco-3 { top:60%; left:3%; font-size:2rem; }
+  </style>
+</head>
+<body>
+<div class="ocean-bg"><div class="stars"></div></div>
+<div class="bubbles-wrap" id="bubbles"></div>
+<div class="waves-wrap"><div class="wave"></div><div class="wave"></div><div class="wave"></div></div>
+<div class="deco deco-1">🐚</div>
+<div class="deco deco-2">🌊</div>
+<div class="deco deco-3">🐠</div>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <span class="logo-main">ANCHOR</span>
+    <span class="logo-wave"></span>
+    <span class="logo-tagline">Official Group Platform</span>
+  </div>
+
+  <div id="setupBanner" class="setup-banner hidden">
+    <h3>⚙️ Firebase Setup Required</h3>
+    <ol>
+      <li>Open <code>firebase-config.js</code> in a text editor</li>
+      <li>Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a></li>
+      <li>Create a project → Add Web App → copy the config</li>
+      <li>Paste values into <code>firebase-config.js</code> and save</li>
+      <li>Enable Auth, Firestore, Storage, and Realtime DB in Firebase</li>
+      <li>Reload this page, then register your owner account</li>
+    </ol>
+  </div>
+
+  <div class="glass-card login-card">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginPanel" class="form-panel active">
+      <div id="lockoutBanner" class="lockout-banner">
+        🔒 Too many attempts. Try again in <strong id="lockTimer">--</strong>.
+      </div>
+      <div class="input-wrap">
+        <label>Username</label>
+        <div class="input-icon-wrap">
+          <span class="icon">👤</span>
+          <input class="input" type="text" id="loginUser" placeholder="Your username" autocomplete="username">
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label>Password</label>
+        <div class="input-icon-wrap" style="position:relative">
+          <span class="icon">🔑</span>
+          <input class="input" type="password" id="loginPass" placeholder="Your password" autocomplete="current-password" style="padding-right:44px">
+          <button class="pw-toggle" onclick="togglePw('loginPass',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div id="loginError" class="error-msg"></div>
+      <div class="hidden" id="attemptsBar" style="text-align:center;font-size:0.78rem;color:var(--text-muted)">
+        Failed attempts:
+        <div class="attempt-dots" id="attemptDots">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" id="loginBtn" onclick="doLogin()">Sign In 🌊</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerPanel" class="form-panel">
+      <div class="input-wrap">
+        <label>Display Name</label>
+        <div class="input-icon-wrap">
+          <span class="icon">✨</span>
+          <input class="input" type="text" id="regName" placeholder="Your name in the group">
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label>Username</label>
+        <div class="input-icon-wrap">
+          <span class="icon">👤</span>
+          <input class="input" type="text" id="regUser" placeholder="Choose a username (min 3 chars)">
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label>Password</label>
+        <div class="input-icon-wrap" style="position:relative">
+          <span class="icon">🔑</span>
+          <input class="input" type="password" id="regPass" placeholder="Choose a password (min 6 chars)" style="padding-right:44px">
+          <button class="pw-toggle" onclick="togglePw('regPass',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label>Confirm Password</label>
+        <div class="input-icon-wrap">
+          <span class="icon">🔒</span>
+          <input class="input" type="password" id="regPass2" placeholder="Confirm your password">
+        </div>
+      </div>
+      <div id="regError" class="error-msg"></div>
+      <div id="regSuccess" class="success-msg"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" id="regBtn" onclick="doRegister()">Create Account 🌊</button>
+      <p style="text-align:center;font-size:0.78rem;color:var(--text-muted)">After registering, sign in to access the platform.</p>
+    </div>
+  </div>
+
+  <p class="footer-note">ANCHOR Platform &copy; 2024</p>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script>
+  // Bubbles
+  const bw = document.getElementById('bubbles');
+  for (let i = 0; i < 18; i++) {
+    const b = document.createElement('div'); b.className = 'bubble';
+    const s = Math.random()*50+10;
+    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;--dur:${Math.random()*12+8}s;--delay:${Math.random()*12}s;--drift:${(Math.random()-.5)*60}px`;
+    bw.appendChild(b);
+  }
+
+  // Check Firebase config
+  if (!FIREBASE_READY) document.getElementById('setupBanner').classList.remove('hidden');
+
+  // Redirect if already signed in
+  if (FIREBASE_READY) {
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (doc.exists && doc.data().approved) window.location.href = 'dashboard.html';
+      }
+    });
+  }
+
+  let lockoutInterval = null;
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0)===(tab==='login')));
+    document.getElementById('loginPanel').classList.toggle('active', tab==='login');
+    document.getElementById('registerPanel').classList.toggle('active', tab==='register');
+  }
+
+  function togglePw(id, btn) {
+    const el = document.getElementById(id);
+    if (el.type==='password') { el.type='text'; btn.textContent='🙈'; } else { el.type='password'; btn.textContent='👁'; }
+  }
+
+  function updateDots(used) {
+    const bar = document.getElementById('attemptsBar');
+    if (used > 0) bar.classList.remove('hidden');
+    document.querySelectorAll('#attemptDots .dot').forEach((d,i) => d.classList.toggle('used', i < used));
+  }
+
+  function startLockTimer(secs) {
+    document.getElementById('lockoutBanner').classList.add('show');
+    const el = document.getElementById('lockTimer');
+    if (lockoutInterval) clearInterval(lockoutInterval);
+    let rem = secs; el.textContent = rem + 's';
+    lockoutInterval = setInterval(() => { rem--; el.textContent = rem+'s'; if (rem<=0) { clearInterval(lockoutInterval); document.getElementById('lockoutBanner').classList.remove('show'); } }, 1000);
+  }
+
+  async function doLogin() {
+    if (!FIREBASE_READY) { toast('Firebase is not configured yet. See setup instructions above.','error'); return; }
+    const username = document.getElementById('loginUser').value.trim();
+    const password = document.getElementById('loginPass').value;
+    const errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    if (!username || !password) { errEl.textContent = 'Please enter your username and password.'; return; }
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Signing in...';
+
+    const result = await login(username, password);
+    btn.disabled = false; btn.textContent = 'Sign In 🌊';
+
+    if (result.success) {
+      toast('Welcome back! 🌊','success');
+      setupListeners();
+      setTimeout(() => window.location.href = 'dashboard.html', 600);
+    } else {
+      errEl.textContent = result.error;
+      if (result.locked) startLockTimer(result.remaining);
+      const a = _getAttempts();
+      updateDots(a.count || 0);
+    }
+  }
+
+  async function doRegister() {
+    if (!FIREBASE_READY) { toast('Firebase is not configured yet.','error'); return; }
+    const displayName = document.getElementById('regName').value.trim();
+    const username = document.getElementById('regUser').value.trim();
+    const password = document.getElementById('regPass').value;
+    const password2 = document.getElementById('regPass2').value;
+    const errEl = document.getElementById('regError');
+    const succEl = document.getElementById('regSuccess');
+    errEl.textContent = ''; succEl.textContent = '';
+
+    if (password !== password2) { errEl.textContent = 'Passwords do not match.'; return; }
+
+    const btn = document.getElementById('regBtn');
+    btn.disabled = true; btn.textContent = 'Creating account...';
+
+    const result = await register(username, password, displayName);
+    btn.disabled = false; btn.textContent = 'Create Account 🌊';
+
+    if (result.success) {
+      succEl.textContent = result.pending
+        ? '✓ Account created! Waiting for owner approval.'
+        : '✓ Account created! You can now sign in.';
+      ['regName','regUser','regPass','regPass2'].forEach(id => document.getElementById(id).value='');
+      if (!result.pending) setTimeout(() => switchTab('login'), 1500);
+    } else {
+      errEl.textContent = result.error;
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('loginPanel').classList.contains('active')) doLogin();
+      else doRegister();
+    }
+  });
+</script>
+</body>
+</html>
